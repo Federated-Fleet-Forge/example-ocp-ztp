@@ -1,0 +1,89 @@
+# Controller node NNCP for bond0 (primary bond).
+# Duplicate this file per host, changing the name, nodeSelector hostname,
+# and IP addresses for each controller node.
+#
+# POLICY TEMPLATING PATTERN:
+# To template the routes from static-routes/routes-migration.yaml into this
+# NNCP, uncomment the ConfigurationPolicy wrapper below and indent the NNCP
+# object beneath it. This converts a plain NNCP manifest into a
+# ConfigurationPolicy with object-templates-raw, allowing ACM hub templating
+# to dynamically inject the route entries from the reference structure.
+---
+# apiVersion: policy.open-cluster-management.io/v1
+# kind: ConfigurationPolicy
+# metadata:
+#   name: controller-01-nncp-policy-bond0
+# spec:
+#   remediationAction: enforce
+#   severity: medium
+#   object-templates-raw: >
+#     - complianceType: musthave
+#       objectDefinition:
+## Uncomment above and indent below along with the route section to template
+## all the routes specified in the static-routes/routes-migration.yaml policy.
+
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: controller-01-nncp-policy-bond0
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: host01.internal.example.com
+  desiredState:
+    ovn:
+      bridge-mappings:
+        - localnet: bond0-ovn-trunk-net
+          bridge: br-vmdata-bond0
+          state: present
+    interfaces:
+    - name: br-vmdata-bond0
+      type: ovs-bridge
+      state: up
+      bridge:
+        allow-extra-patch-ports: true
+        options:
+          stp: false
+        port:
+          - name: ovs0
+          - name: bond0
+            vlan:
+              mode: trunk
+              trunk-tags:
+              - id-range:
+                  min: 1
+                  max: 3100
+    - name: bond0.3112
+      description: storage
+      type: vlan
+      state: up
+      mtu: 8900
+      vlan:
+        base-iface: bond0
+        id: 3112
+      ipv4:
+        address:
+        - ip: 203.0.113.1
+          prefix-length: 29
+        dhcp: false
+        enabled: true
+      ipv6:
+        enabled: false
+    - name: bond0.3113
+      mtu: 1500
+      type: vlan
+      state: up
+      vlan:
+        base-iface: bond0
+        id: 3113
+      ipv4: { enabled: false }
+      ipv6: { enabled: false }
+    # When using the ConfigurationPolicy templating pattern above, add:
+    # routes:
+    #   config:
+    #   {{- range (lookup "nmstate.io/v1" "NodeNetworkConfigurationPolicy" "" "static-routes-migration").spec.desiredState.routes.config }}
+    #   - destination: {{ .destination }}
+    #     metric: {{ .metric }}
+    #     next-hop-address: {{ .["next-hop-address"] }}
+    #     next-hop-interface: {{ .["next-hop-interface"] }}
+    #     table-id: {{ .["table-id"] }}
+    #   {{- end }}

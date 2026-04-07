@@ -1,0 +1,20 @@
+{{- include "baremetal-network-tester.validate" . }}
+{{- range .Values.statefulSets }}
+{{- $namespace := .namespace }}
+{{- $cluster:= $.Values.cluster }}
+{{- range .configMaps }}
+{{- $csvFileName := print "files/" $cluster "/" .filename }}
+{{- $csv := $.Files.Get $csvFileName}} 
+{{- if $csv }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}
+  namespace: {{ $namespace }}
+data:
+  {{ .filename }}: |
+{{ $csv | indent 4 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

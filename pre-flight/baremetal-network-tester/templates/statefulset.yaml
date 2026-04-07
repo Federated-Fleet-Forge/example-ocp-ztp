@@ -1,0 +1,145 @@
+{{- range .Values.statefulSets }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .name }}
+  namespace: {{ .namespace }}
+spec:
+  serviceName: {{ .name }}
+  replicas: {{ .replicas }}
+  selector:
+{{- if .labels }}
+    matchLabels:
+{{- range $key, $val := .labels }}
+      {{ $key }}: {{ $val }}
+{{- end }}
+{{- end }}
+  template:
+    metadata:
+{{- if .labels }}
+      labels:
+{{- range $key, $val := .labels }}
+        {{ $key }}: {{ $val }}
+{{- end }}
+{{- end }}
+{{- if .annotations }}
+      annotations:
+{{- range $key, $val := .annotations }}
+        {{ $key }}: {{ $val }}
+{{- end }} 
+{{- end }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ include "baremetal-network-tester.serviceAccountName" $ }}
+      containers:
+      - name: {{ .name }}
+        image: {{ .image }}
+        securityContext: 
+{{- if .capabilities }}
+          capabilities: 
+            add: 
+{{- range .capabilities }}
+            - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- if eq .type "ht-worker" }}
+          allowPrivilegeEscalation: true 
+          privileged: true 
+          runAsUser: 0 
+{{- end }}
+        command: ["sleep", "365d"]
+{{- if .ports }}
+        ports:
+{{- range .ports }}
+        - containerPort: {{ .containerPort }}
+          name: {{ .name }}
+{{- end }}
+{{- end }}
+        env:
+        - name: NAMESPACE
+          value: {{ .namespace }}
+        - name: MOUNT_PATH
+          value: /mnt
+        - name: MY_POD_NAME
+          valueFrom: 
+            fieldRef: 
+              fieldPath: metadata.name
+        volumeMounts:
+{{- range .configMaps }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
+          subPath: {{ .subPath }}
+{{- end }}
+{{- range .scripts }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
+          subPath: {{ .subPath }}
+{{- end }}
+{{- if eq .type "ht-worker" }}
+        - mountPath: /dev/hugepages 
+          name: hugepage 
+{{- end }}
+{{- if eq .type "ht-worker" }}
+        resources: 
+          limits: 
+            memory: 8Gi 
+            hugepages-1Gi: 2Gi 
+            cpu: '4' 
+            openshift.io/sriovleftdpdk: '1' 
+            openshift.io/sriovrightdpdk: '1' 
+          requests: 
+            memory: 8Gi 
+            hugepages-1Gi: 2Gi 
+            cpu: '4' 
+            openshift.io/sriovleftdpdk: '1' 
+            openshift.io/sriovrightdpdk: '1'
+{{- end }}
+      nodeSelector:
+{{- range $key, $val := .nodeSelector }}
+        {{ $key }}: {{ $val | quote }}
+{{- end }}
+{{- if eq .type "ht-worker" }}
+      tolerations: 
+      - key: "high-throughput" 
+        operator: "Exists" 
+        effect: "NoSchedule" 
+{{- end }}
+      volumes:
+{{- range .configMaps }}
+      - name: {{ .name }}
+        configMap:
+          name: {{ .name }}
+{{- end }}
+{{- range .scripts }}
+      - name: {{ .name }}
+        configMap:
+          name: {{ .name }}
+{{- end }}
+{{- if eq .type "ht-worker" }}
+      - name: hugepage 
+        emptyDir: 
+          medium: HugePages 
+{{- end }}
+
+---
+{{- if .enableNAD }}
+{{- if eq .type "standard-worker" }}
+apiVersion: "k8s.cni.cncf.io/v1" 
+kind: NetworkAttachmentDefinition 
+metadata: 
+  annotations: 
+  name: nad-macvlan-bond2 
+  namespace: {{ .namespace }}
+spec: 
+  config: '{ 
+	"cniVersion": "0.4.0", 
+	"type": "macvlan", 
+	"mode": "private", 
+	"ipam": {}, 
+	"master": "bond2", 
+	"mtu": 2090 
+}'
+{{- end }}
+{{- end }}
+{{- end }}

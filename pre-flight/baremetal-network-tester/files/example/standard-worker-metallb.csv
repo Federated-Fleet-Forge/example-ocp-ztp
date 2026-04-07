@@ -1,0 +1,4 @@
+ip,port,protocol,description
+192.0.2.100,80,tcp,Example MetalLB VIP - HTTP
+192.0.2.100,443,tcp,Example MetalLB VIP - HTTPS
+192.0.2.101,8080,tcp,Example MetalLB VIP - Application

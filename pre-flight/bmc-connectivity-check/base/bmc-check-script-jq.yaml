@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bmc-check-script
+  namespace: example-bmc-prechecks
+data:
+  check-bmc.sh: |
+    BMCIPS=`cat /tmp/bmc-ip-list.txt`
+    TIMEOUTSEC=1
+    HEADERS='"Content-Type: application/json"'
+
+    declare -a REACHABLE=()
+    declare -a NOTREACHABLE=()
+    echo "CHECKING CONNECTIVITY TO BMC ADDRESSES"
+    for BMC in ${BMCIPS}; do
+      echo "- TESTING ${BMC}"
+      if curl -u $BMCCRED -H "$HEADERS" -kv -X GT https://${BMC}/redfish/v1/systems/1 --connect-timeout $TIMEOUTSEC; then
+        REACHABLE+=($BMC)
+      else
+        NOTREACHABLE+=($BMC)
+      fi
+      echo ""
+    done
+
+    declare -a NODESUMMARY=()
+    echo "SCRAPING NODE SUMMARY FOR REACHABLE BMC ADDRESSES"
+    for BMC in "${REACHABLE[@]}"; do
+      echo -e "- PULLING FOR ${BMC}"
+      THISSYSTEM=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/systems/1`
+
+      THISMANUFACTURER=`echo $THISSYSTEM |jq -r .Manufacturer`
+      THISMODEL=`echo $THISSYSTEM |jq -r .Model`
+      THISBOOTMODE=`echo $THISSYSTEM |jq -r .Boot.BootSourceOverrideMode`
+      THISBIOSVER=`echo $THISSYSTEM |jq -r .BiosVersion`
+      THISMEMGB=`echo $THISSYSTEM |jq -r .MemorySummary.TotalSystemMemoryGiB`
+      THISCPUCOUNT=`echo $THISSYSTEM |jq -r .ProcessorSummary.Count`
+      THISCPUTYPE=`echo $THISSYSTEM |jq -r .ProcessorSummary.Model`
+      THISSERIAL=`echo $THISSYSTEM |jq -r .SerialNumber`
+      THISPOWERSTATE=`echo $THISSYSTEM |jq -r .PowerState`
+      THISAGGREGATEHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.AggregateServerHealth`
+      THISETHERNETINTERFACE1=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/1 |jq -r .MACAddress`
+      THISETHERNETINTERFACE2=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/2 |jq -r .MACAddress`
+      THISETHERNETINTERFACE3=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/3 |jq -r .MACAddress`
+      THISETHERNETINTERFACE4=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/4 |jq -r .MACAddress`
+      THISETH1LINKSTATUS=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/1 |jq -r .LinkStatus`
+      THISETH2LINKSTATUS=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/2 |jq -r .LinkStatus`
+      THISETH3LINKSTATUS=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/3 |jq -r .LinkStatus`
+      THISETH4LINKSTATUS=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/EthernetInterfaces/4 |jq -r .LinkStatus`
+      THISBIOSHARDWAREHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.BiosOrHardwareHealth.Status.Health`
+      THISMEMORYHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.Memory.Status.Health`
+      THISNETWORKHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.Network.Status.Health`
+      THISPOWERSUPPLIESHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.PowerSupplies.Status.Health`
+      THISPROCESSORHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.Processors.Status.Health`
+      THISSTORAGEHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.Storage.Status.Health`
+      THISTEMPERATUREHEALTH=`echo $THISSYSTEM |jq -r .Oem.Hpe.AggregateHealthStatus.Temperatures.Status.Health`
+      THISSTORAGE=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/systems/1/Storage`
+      THISSTORAGENESTED=$(for i in `echo $THISSTORAGE | jq -r '.Members[]."@odata.id"'`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done)
+      if [ -z "$THISSTORAGENESTED" ]; then
+        echo "  WARN - Storage Info Unavailable at PLDM defined standard RedFish URI for BMC ${BMC}, trying HPE proprietary URI"
+        THISSTORAGE=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/systems/1/SmartStorage/ArrayControllers?\$expand=.`
+        THISSTORAGENESTED=$(for i in `echo $THISSTORAGE | jq -r '.Members[]."@odata.id"'`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done)
+        if [ -z "$THISSTORAGENESTED" ]; then
+            echo "  ERROR - Storage Info Unavailable at HPE proprietary URI as well. Giving up for BMC ${BMC}"
+            THISDRIVECOUNT="please check manually"
+            THISRAIDCOUNT="please check manually"
+        else
+            echo "  SUCCESS - Storage Info Available at HPE proprietary URI"
+            THISDRIVECOUNT=$(for i in `echo $THISSTORAGENESTED | jq -r '.Links.PhysicalDrives."@odata.id"'`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done | jq -r '."Members@odata.count"')
+            THISRAIDCOUNT=$(for i in `echo $THISSTORAGENESTED | jq -r '.Links.LogicalDrives."@odata.id"'`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done | q -r '."Members@odata.count"')
+        fi
+        else
+        THISDRIVECOUNT=`echo $THISSTORAGENESTED | jq -r '."Drives@odata.count"'`
+        THISRAIDCOUNT=`echo $THISSTORAGENESTED | jq -r '.Volumes."Members@odata.count"'`
+      fi
+      THISWORKLOADPROFILE=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/systems/1/bios |jq -r .Attributes.WorkloadProfile`
+
+      # Add to Node Summary table
+      NODESUMMARY+=("${BMC},${THISPOWERSTATE},${THISAGGREGATEHEALTH},${THISMANUFACTURER},${THISMODEL},${THISSERIAL},${THISCPUCOUNT},${THISMEMGB},${THISDRIVECOUNT},${THISRAIDCOUNT}")
+
+      # Add to Firmware Details table
+      FIRMWAREDETAILS+=("${BMC},${THISBIOSVER},${THISBOOTMODE},${THISWORKLOADPROFILE},${THISCPUTYPE}")
+
+      # Add to Network Details table
+      NETWORKDETAILS+=("${BMC},${THISPOWERSTATE},${THISETHERNETINTERFACE1},${THISETH1LINKSTATUS},${THISETHERNETINTERFACE2},${THISETH2LINKSTATUS},${THISETHERNETINTERFACE3},${THISETH3LINKSTATUS},${THISETHERNETINTERFACE4},${THISETH4LINKSTATUS}")
+
+      # Add to Health Summary table
+      HEALTHSUMMARY+=("${BMC},${THISAGGREGATEHEALTH},${THISBIOSHARDWAREHEALTH},${THISNETWORKHEALTH},${THISSTORAGEHEALTH},${THISMEMORYHEALTH},${THISPROCESSORHEALTH},${THISPOWERSUPPLIESHEALTH},${THISTEMPERATUREHEALTH}")
+
+
+    done
+
+    echo ""
+    echo "NODES NOT REACHABLE: ${NOTREACHABLE[@]}"
+    echo ""
+    echo "NODES REACHABLE: ${REACHABLE[@]}"
+    echo ""
+    echo "NODE SUMMARY (REACHABLE ONLY):"
+    printf '%s\n' "${NODESUMMARY[@]}" | sed '1i BMC,POWER,HEALTH,MANUFACTURER,MODEL,SERIAL,CPUCOUNT,MEM(GB),DISKS,RAID\n' | column -s, -t
+    echo ""
+    echo "FIRMWARE AND HARDWARE DETAILS (REACHABLE ONLY):"
+    printf '%s\n' "${FIRMWAREDETAILS[@]}" | sed '1i BMC,BIOSVERSION,BOOTMODE,WORKLOADPROFILE,CPU_TYPE\n' | column -s, -t
+    echo ""
+    echo "NETWORK DETAILS (REACHABLE ONLY):"
+    printf '%s\n' "${NETWORKDETAILS[@]}" | sed '1i BMC,POWER,ETH1MAC,ETH1STATUS,ETH2MAC,ETH2STATUS,ETH3MAC,ETH3STATUS,ETH4MAC,ETH4STATUS\n' | column -s, -t
+    echo ""
+    echo "HEALTH SUMMARY (REACHABLE ONLY):"
+    printf '%s\n' "${HEALTHSUMMARY[@]}" | sed '1i BMC,OVERALLHEALTH,BIOSORHARDWARE,NETWORK,STORAGE,MEMORY,PROCESSORS,POWERSUPPLIES,TEMPERATURES\n' | column -s, -t

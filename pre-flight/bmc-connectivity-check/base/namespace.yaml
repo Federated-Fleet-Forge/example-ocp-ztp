@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: example-bmc-prechecks
+  annotations:
+    openshift.io/description: Custom cluster management operations
+    openshift.io/display-name: example-bmc-prechecks

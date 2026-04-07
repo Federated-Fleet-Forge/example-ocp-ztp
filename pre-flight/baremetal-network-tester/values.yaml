@@ -1,0 +1,67 @@
+# Default values for baremetal-network-tester.
+# Customise for your environment: add CSV files under files/<cluster>/
+# and configure statefulSets below to mount and execute them.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+clusterRole:
+  name: baremetal-network-tester
+
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Example statefulSet configuration for network testing.
+# Uncomment and customise for your cluster.
+#
+# statefulSets:
+#   - name: worker-testing
+#     namespace: baremetal-test
+#     replicas: 1
+#     type: standard-worker
+#     image: image-registry.openshift-image-registry.svc:5000/openshift/network-tools:latest
+#     labels:
+#       testing: macvlan
+#     nodeSelector:
+#       node-role.kubernetes.io/worker: ""
+#     capabilities:
+#     - NET_ADMIN
+#     configMaps:
+#     - name: standard-worker-metallb
+#       filename: standard-worker-metallb.csv
+#       mountPath: /mnt/standard-worker-metallb.csv
+#       subPath: standard-worker-metallb.csv
+#     scripts:
+#     - name: standard-worker-metallb-script
+#       filename: standard-worker-metallb-script.sh
+#       mountPath: /mnt/standard-worker-metallb.sh
+#       subPath: standard-worker-metallb-script.sh

@@ -1,0 +1,26 @@
+# Example CUDN on bond0 (primary bond / OVS trunk bridge).
+# Each CUDN maps one access VLAN to the localnet topology so that VMs in
+# labeled namespaces can attach to that VLAN as a secondary interface.
+#
+# To add more VLANs: copy this file, change the name, VLAN ID,
+# namespaceSelector label, and optionally the MTU.
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: bond0-example-vlan-100
+spec:
+  namespaceSelector:
+    matchLabels:
+      net.io/vlan-100-access: "true"
+  network:
+    topology: Localnet
+    localnet:
+      vlan:
+        mode: Access
+        access:
+          id: 100
+      role: Secondary
+      physicalNetworkName: bond0-ovn-trunk-net
+      mtu: 1500
+      ipam:
+        mode: Disabled

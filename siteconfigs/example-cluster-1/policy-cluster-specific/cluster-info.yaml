@@ -1,0 +1,55 @@
+# Cluster specific config parameters
+# to be deployed via policy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-info
+  namespace: openshift-config
+data:
+  # nfs parameters for etcd backup
+  #nfs_server: 198.51.100.60
+  #nfs_share: "/OCP_WORKLOAD_TSPN_vol_01"
+
+  # cluster VIPs and machinenet CIDR for policy usage
+  api_vip_ip: 192.0.2.10
+  apps_vip_ip: 192.0.2.11
+  machine_net_cidr: "192.0.2.0/27"
+
+  # cluster server specific tuning parameters
+  # For each different type of node that will have CPU pinning applied:
+  #   1. boot the node and capture the CPUs per NUMA node via lscpu, e.g:
+  #         NUMA:
+  #           NUMA node(s):          TBC # 2
+  #           NUMA node0 CPU(s):     TBC # 0-31,64-95
+  #           NUMA node1 CPU(s):     TBC # 32-63,96-127
+  #   2. add 2x variables per node type to the cluster_info configMap as follows:
+  #         isolated_cpus_<node_type>
+  #         reserved_cpus_<node_type>
+  #       where <node_type> is some description of the type of node. Refer to existing Example Org clusters
+  #       which have CPU pinning applied if unsure.
+  #   3. set the value for each variable as per the detailed design in terms of the number of cores to
+  #      reserve for the OS and the number of cores to isolate for CPU pinned Pods.
+  #   4. use the created variables in the templating for the associated PerformanceProfile which implements
+  #      the CPU pinning
+
+  # CPU pinning parameters for 5GC HT25GB nodes with Intel Xeon Gold 6538N CPUs
+  # NUMA node(s):                         2
+  # NUMA node0 CPU(s):                    0-31,64-95
+  # NUMA node1 CPU(s):                    32-63,96-127
+
+
+  # ODF parameters
+  # odf_target_disk_count: "6"
+  # odf_min_disk_size: "5000Gi"
+  # odf_storage_interface: "bond0.1926"
+  # odf_subnet: "203.0.113.10/26"
+  # odf_subnet_excluded_ips: |
+  
+
+
+
+  # MetalLB parameters
+  #   NOTE: This data is taken from the IP design specific to this CNFs networking:
+
+  metallb_bgp_myASN: "4200006003" # MetalLB AS
+  metallb_bgp_peerASN_common: "4200004000"

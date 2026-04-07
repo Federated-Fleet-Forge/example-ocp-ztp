@@ -1,0 +1,22 @@
+{{- $namespaces := list }}  {{/* Initialize empty list properly */}}
+{{- range .Values.statefulSets }}
+  {{- $namespaces = append $namespaces .namespace }}
+{{- end }}
+{{- $clusterRoleName := include "baremetal-network-tester.clusterRoleName" . }}
+{{- $serviceAccountName :=  include "baremetal-network-tester.serviceAccountName" .  }}
+{{- range $i, $ns := $namespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  {{- $clusterRoleBindingName := printf "%s-%d" $clusterRoleName $i }}
+  name: {{ $clusterRoleBindingName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $clusterRoleName }}
+subjects:
+- kind: ServiceAccount
+  name: {{ $serviceAccountName }}
+  namespace: {{ $ns }}
+{{- end }}

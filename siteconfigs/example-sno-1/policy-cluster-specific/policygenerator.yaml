@@ -1,0 +1,31 @@
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PolicyGenerator
+metadata:
+  name: example-sno-1
+placementBindingDefaults:
+  name: binding-managed-example-sno-1-cluster-configuration
+policyDefaults:
+  namespace: policies
+  categories:
+    - CM Configuration Management
+  controls:
+    - CM-6 Configuration Settings
+  standards:
+    - Cluster-specific Configuration
+  policySets:
+    - policyset-example-sno-1-cluster
+  remediationAction: enforce
+policies:
+
+# Cluster Info ConfigMap - Start
+  - name: policy-example-sno-1-cluster-info
+    manifests:
+      - path: cluster-info.yaml
+# Cluster Info ConfigMap - End
+
+policySets:
+  - name: policyset-example-sno-1-cluster
+    description: Configuration policies pushed to example-sno-1 cluster.
+    placement:
+      placementPath: placement.yaml

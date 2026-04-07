@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bmc-check
+  namespace: example-bmc-prechecks
+spec:
+  containers:
+  - name: bmc-check
+    terminationMessagePath: /dev/termination-log
+    command:
+      - /bin/bash
+      - '-c'
+      - /scripts/check-bmc.sh
+    volumeMounts:
+      - name: bmc-check-script
+        mountPath: /scripts
+      - name: bmc-ips
+        mountPath: /tmp
+    env:
+    - name: BMCCRED
+      valueFrom:
+        secretKeyRef:
+          key: credential
+          name: bmc-check-creds
+    image: 'registry.redhat.io/openshift4/ose-cli:latest'
+  restartPolicy: Never
+  dnsPolicy: ClusterFirst
+  terminationGracePeriodSeconds: 30
+  volumes:
+  - name: bmc-check-script
+    configMap:
+      name: bmc-check-script
+      defaultMode: 0777
+  - name: bmc-ips
+    configMap:
+      name: bmc-ips

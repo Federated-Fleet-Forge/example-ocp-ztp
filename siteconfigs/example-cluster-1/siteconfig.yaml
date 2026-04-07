@@ -1,0 +1,220 @@
+apiVersion: ran.openshift.io/v1
+kind: SiteConfig
+metadata:
+  name: "example-cluster-1"
+  namespace: "example-cluster-1"
+spec:
+  baseDomain: "internal.example.com"
+  pullSecretRef:
+    name: "pull-secret-workload-clusters"
+  clusterImageSetNameRef: "example-current-imageset"
+  sshPublicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExamplePublicKeyReplaceMeWithYourOwnSSHKey00000 user@jumphost.example.com"
+  clusters:
+  - clusterName: "example-cluster-1"
+    networkType: "OVNKubernetes"
+    extraManifests:
+      searchPaths:
+        - ../../extra-manifests/custom/site1
+      filter:
+        inclusionDefault: exclude
+        include:
+        - 99-master-chrony.yaml
+        - 99-worker-chrony.yaml
+    clusterLabels:
+      vendor: OpenShift
+      common: "true"
+      cluster-group: virt
+      site: site1
+      storageBrand: odf
+      cloud: BareMetal
+    clusterNetwork:
+    - cidr: 100.104.0.0/14
+      hostPrefix: 23
+    apiVIP: 192.0.2.10
+    ingressVIP: 192.0.2.11
+    serviceNetwork:
+    - 100.108.0.0/16
+    additionalNTPSources:
+      - 198.51.100.2
+      - 198.51.100.3
+    proxy:
+      httpProxy: http://proxy.example.com:8080
+      httpsProxy: http://proxy.example.com:8080
+      noProxy: localhost,127.0.0.1,.cluster.local,100.104.0.0/14,100.108.0.0/16,ilo.internal.example.com,internal.example.com,192.0.2.0/24
+    crTemplates:
+      KlusterletAddonConfig: "../../cr-templates/KlusterletAddonConfigOverride.yaml"
+    nodes:
+    - hostName: "host01.internal.example.com"
+      role: "master"
+      nodeLabels:
+        rack: "one"
+        cluster.ocs.openshift.io/openshift-storage: ""
+      rootDeviceHints:
+        deviceName: /dev/dm-0
+      bmcAddress: redfish-virtualmedia://host01.ilo.internal.example.com/redfish/v1/Systems/1
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "1E:C7:71:E0:00:1A"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: 1E:C7:71:E0:00:1A
+          name: ens3f0
+        - macAddress: 1E:C7:71:E0:00:1B
+          name: ens3f1
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 198.51.100.23
+              - 198.51.100.24
+          interfaces:
+          - name: bond0
+            type: bond
+            state: up
+            ipv4:
+              enabled: false
+            ipv6:
+              enabled: false
+            link-aggregation:
+              mode: balance-xor
+              options:
+                xmit_hash_policy: "vlan+srcmac"
+              port:
+              - ens3f0
+              - ens3f1
+            mtu: 9000
+          - name: bond0.3111
+            type: vlan
+            state: up
+            mtu: 1500
+            vlan:
+              base-iface: bond0
+              id: 3111
+            ipv4:
+              enabled: true
+              address:
+                - ip: 192.0.2.12
+                  prefix-length: 27
+              dhcp: false
+          routes:
+            config:
+            - destination: 0.0.0.0/0
+              next-hop-address: 192.0.2.1
+              next-hop-interface: bond0.3111
+    - hostName: "host02.internal.example.com"
+      role: "master"
+      nodeLabels:
+        rack: "one"
+        cluster.ocs.openshift.io/openshift-storage: ""
+      rootDeviceHints:
+        deviceName: /dev/dm-0
+      bmcAddress: redfish-virtualmedia://host02.ilo.internal.example.com/redfish/v1/Systems/1
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "1E:C7:71:E0:00:20"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: 1E:C7:71:E0:00:20
+          name: ens3f0
+        - macAddress: 1E:C7:71:E0:00:21
+          name: ens3f1
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 198.51.100.23
+              - 198.51.100.24
+          interfaces:
+          - name: bond0
+            type: bond
+            state: up
+            ipv4:
+              enabled: false
+            ipv6:
+              enabled: false
+            link-aggregation:
+              mode: balance-xor
+              options:
+                xmit_hash_policy: "vlan+srcmac"
+              port:
+              - ens3f0
+              - ens3f1
+            mtu: 9000
+          - name: bond0.3111
+            type: vlan
+            state: up
+            mtu: 1500
+            vlan:
+              base-iface: bond0
+              id: 3111
+            ipv4:
+              enabled: true
+              address:
+                - ip: 192.0.2.13
+                  prefix-length: 27
+              dhcp: false
+          routes:
+            config:
+            - destination: 0.0.0.0/0
+              next-hop-address: 192.0.2.1
+              next-hop-interface: bond0.3111
+    - hostName: "host03.internal.example.com"
+      role: "master"
+      nodeLabels:
+        rack: "one"
+        cluster.ocs.openshift.io/openshift-storage: ""
+      rootDeviceHints:
+        deviceName: /dev/dm-0
+      bmcAddress: redfish-virtualmedia://host03.ilo.internal.example.com/redfish/v1/Systems/1
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "1E:C7:71:E0:00:26"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: 1E:C7:71:E0:00:26
+          name: ens3f0
+        - macAddress: 1E:C7:71:E0:00:27
+          name: ens3f1
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 198.51.100.23
+              - 198.51.100.24
+          interfaces:
+          - name: bond0
+            type: bond
+            state: up
+            ipv4:
+              enabled: false
+            ipv6:
+              enabled: false
+            link-aggregation:
+              mode: balance-xor
+              options:
+                xmit_hash_policy: "vlan+srcmac"
+              port:
+              - ens3f0
+              - ens3f1
+            mtu: 9000
+          - name: bond0.3111
+            type: vlan
+            state: up
+            mtu: 1500
+            vlan:
+              base-iface: bond0
+              id: 3111
+            ipv4:
+              enabled: true
+              address:
+                - ip: 192.0.2.14
+                  prefix-length: 27
+              dhcp: false
+          routes:
+            config:
+            - destination: 0.0.0.0/0
+              next-hop-address: 192.0.2.1
+              next-hop-interface: bond0.3111

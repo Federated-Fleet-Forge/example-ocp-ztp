@@ -1,0 +1,47 @@
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PolicyGenerator
+metadata:
+  name: example-cluster-1
+placementBindingDefaults:
+  name: binding-managed-example-cluster-1-cluster-configuration
+policyDefaults:
+  namespace: policies
+  categories:
+    - CM Configuration Management
+  controls:
+    - CM-6 Configuration Settings
+  standards:
+    - Cluster-specific Configuration
+  policySets:
+    - policyset-example-cluster-1-cluster
+  remediationAction: enforce
+policies:
+
+# Cluster Info ConfigMap - Start
+  - name: policy-example-cluster-1-cluster-info
+    manifests:
+      - path: cluster-info.yaml
+# Cluster Info ConfigMap - End
+
+# Cluster NMState Config - Start
+  - name: policy-example-cluster-1-nmstate
+    manifests:
+      - path: nncp/controller/
+      - path: nncp/standard-worker/
+      - path: static-routes/
+    dependencies:
+      - name: policy-group-virt-networking-nmstate-operand
+# Cluster NMState Config - End
+
+# Cluster User Defined Networks Config - Start
+  - name: policy-example-cluster-1-clusteruserdefinednetworks
+    manifests:
+      - path: clusteruserdefinednetworks/
+# Cluster User Defined Networks Config - End
+
+policySets:
+  - name: policyset-example-cluster-1-cluster
+    description: Configuration policies pushed to example-cluster-1 cluster.
+    placement:
+      placementPath: placement.yaml

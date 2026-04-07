@@ -1,0 +1,22 @@
+# Example CUDN on bond1 (secondary bond / OVS trunk bridge).
+# Same pattern as bond0 examples but using the secondary physical network.
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: bond1-example-vlan-200
+spec:
+  namespaceSelector:
+    matchLabels:
+      net.io/vlan-200-access: "true"
+  network:
+    topology: Localnet
+    localnet:
+      vlan:
+        mode: Access
+        access:
+          id: 200
+      role: Secondary
+      physicalNetworkName: bond1-ovn-trunk-net
+      mtu: 1500
+      ipam:
+        mode: Disabled

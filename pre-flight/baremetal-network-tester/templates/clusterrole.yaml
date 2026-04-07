@@ -1,0 +1,28 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "baremetal-network-tester.clusterRoleName" . }}
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get","list"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["create", "get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/exec", "pods", "pods/attach", "pods/log"]
+  verbs: ["watch", "get", "list", "create", "delete" ]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["create", "get", "list", "watch", "delete"]
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - privileged
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+- apiGroups: ["k8s.cni.cncf.io"]
+  resources: ["network-attachment-definitions"]
+  verbs: ["get", "create", "list", "delete"]

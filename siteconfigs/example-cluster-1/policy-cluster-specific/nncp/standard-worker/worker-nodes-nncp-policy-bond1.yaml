@@ -1,0 +1,38 @@
+---
+## These are the Secondary bond interfaces for virtual machines.
+# each has equivalent NADs in respective namespaces.
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: worker-nodes-nncp-policy-bond1
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ''
+  desiredState:
+    interfaces:
+    # Bridge and the Bond in one logical block - which allows the use of balance-slb mode directly in the OVS bridge definition
+    - name: br-vmdata-bond1
+      type: ovs-bridge
+      state: up
+      mtu: 8900
+      bridge:
+        allow-extra-patch-ports: true
+        port:
+          - name: bond1 # This is the OVS Bond Name
+            link-aggregation:
+              mode: balance-slb # OVS Adaptive Source Load Balancing
+              port:
+                - name: ens3f6 # Physical Interface 1
+                - name: ens3f7 # Physical Interface 2
+              # No 'ovsdb' extra config needed; balance-slb is native to OVS
+              ovs-db:
+                other_config:
+                  # Set rebalance interval to 30 seconds (30000 ms)
+                  # Default is 10000 (10s). Higher = More stable MACs to suit the needs of the old independent switches. keeping your network team happy!
+                  bond-rebalance-interval: "30000"
+    ovn:
+      bridge-mappings:
+      # Maps the physical network name to the OVS bridge defined above
+      - localnet: bond1-ovn-trunk-net
+        bridge: br-vmdata-bond1
+        state: present

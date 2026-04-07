@@ -1,0 +1,76 @@
+apiVersion: ran.openshift.io/v1
+kind: SiteConfig
+metadata:
+  name: "example-sno-1"
+  namespace: "example-sno-1"
+spec:
+  baseDomain: "internal.example.com"
+  pullSecretRef:
+    name: "pull-secret-workload-clusters"
+  clusterImageSetNameRef: "img4.18.18-x86-64-appsub"
+  sshPublicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExamplePublicKeyReplaceMeWithYourOwnSSHKey00000 user@jumphost.example.com"
+  clusters:
+  - clusterName: "example-sno-1"
+    networkType: "OVNKubernetes"
+    extraManifests:
+      searchPaths:
+        - ../../extra-manifests/custom/site1
+      filter:
+        inclusionDefault: exclude
+        include:
+        - 99-master-chrony.yaml
+    clusterLabels:
+      vendor: OpenShift
+      common: "true"
+      cluster-group: sno
+      site: site1
+      storageBrand: lvms
+      cloud: BareMetal
+    clusterNetwork:
+    - cidr: 100.104.0.0/14
+      hostPrefix: 23
+    serviceNetwork:
+    - 100.108.0.0/16
+    additionalNTPSources:
+      - 198.51.100.2
+      - 198.51.100.3
+    proxy:
+      httpProxy: http://proxy.example.com:8080
+      httpsProxy: http://proxy.example.com:8080
+      noProxy: localhost,127.0.0.1,.cluster.local,100.104.0.0/14,100.108.0.0/16,ilo.internal.example.com,internal.example.com,192.0.2.0/24
+    nodes:
+    - hostName: "sno01.internal.example.com"
+      role: "master"
+      rootDeviceHints:
+        deviceName: /dev/sda
+      bmcAddress: redfish-virtualmedia://sno01.ilo.internal.example.com/redfish/v1/Systems/1
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "1E:C7:71:E0:01:00"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: 1E:C7:71:E0:01:00
+          name: eno1
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 198.51.100.23
+              - 198.51.100.24
+          interfaces:
+          - name: eno1
+            type: ethernet
+            state: up
+            mtu: 1500
+            ipv4:
+              enabled: true
+              address:
+                - ip: 192.0.2.50
+                  prefix-length: 24
+              dhcp: false
+          routes:
+            config:
+            - destination: 0.0.0.0/0
+              next-hop-address: 192.0.2.1
+              next-hop-interface: eno1

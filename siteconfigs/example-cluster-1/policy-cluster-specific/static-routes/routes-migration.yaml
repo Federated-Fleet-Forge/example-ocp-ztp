@@ -1,0 +1,37 @@
+# This NNCP is a reference structure for policy templating.
+# It defines static routes using a nodeSelector that deliberately matches
+# no nodes (do-not-apply-to-nodes: "true"), so it never applies directly.
+#
+# Instead, the routes defined here are intended to be templated into
+# per-host controller NNCPs using ConfigurationPolicy object-templates-raw.
+# This pattern allows you to maintain a single source of truth for routes
+# that must be applied across multiple per-host NNCPs - each with its own
+# unique IP addresses but sharing the same route table entries.
+#
+# See the commented-out ConfigurationPolicy block in
+# nncp/controller/controller-nncp-bond0.yaml for the templating pattern.
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: static-routes-migration
+spec:
+  nodeSelector:
+      do-not-apply-to-nodes: "true"
+  desiredState:
+    routes:
+      config:
+      - destination: 198.51.100.0/24
+        metric: 150
+        next-hop-address: 203.0.113.1
+        next-hop-interface: bond0.3112
+        table-id: 254
+      - destination: 203.0.113.0/24
+        metric: 150
+        next-hop-address: 203.0.113.1
+        next-hop-interface: bond0.3112
+        table-id: 254
+status:
+  conditions:
+  - reason: NoMatchingNode
+    status: "True"
+    type: Available

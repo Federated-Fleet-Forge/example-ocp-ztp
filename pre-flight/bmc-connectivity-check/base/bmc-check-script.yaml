@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bmc-check-script
+  namespace: example-bmc-prechecks
+data:
+  check-bmc.sh: |
+    BMCIPS=`cat /tmp/bmc-ip-list.txt`
+    TIMEOUTSEC=1
+    HEADERS='"Content-Type: application/json"'
+
+    declare -a REACHABLE=()
+    declare -a NOTREACHABLE=()
+    echo "CHECKING CONNECTIVITY TO BMC ADDRESSES"
+    for BMC in ${BMCIPS}; do
+      echo "- TESTING ${BMC}"
+      if curl -u $BMCCRED -H "$HEADERS" -kv -X GT https://${BMC}/redfish/v1/systems/1 --connect-timeout $TIMEOUTSEC; then
+        REACHABLE+=($BMC)
+      else
+        NOTREACHABLE+=($BMC)
+      fi
+      echo ""
+    done
+
+    declare -a NODESUMMARY=()
+    echo "SCRAPING NODE SUMMARY FOR REACHABLE BMC ADDRESSES"
+    for BMC in "${REACHABLE[@]}"; do
+      echo -e "- PULLING FOR ${BMC}"
+      THISSYSTEM=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/systems/1?\$expand=.`
+
+      # no jq in ose-cli image, using python instead
+      THISBOOTMODE=`echo $THISSYSTEM | python3 -c "import sys, json; print(json.load(sys.stdin)['Boot']['BootSourceOverrideMode'])"` # jq -r .Boot.BootSourceOverrideMode`
+      THISBIOSVER=`echo $THISSYSTEM | python3 -c "import sys, json; print(json.load(sys.stdin)['BiosVersion'])"` # jq -r .BiosVersion`
+      THISMEMGB=`echo $THISSYSTEM | python3 -c "import sys, json; print(json.load(sys.stdin)['MemorySummary']['TotalSystemMemoryGiB'])"` # jq -r .MemorySummary.TotalSystemMemoryGiB`
+      THISCPUCOUNT=`echo $THISSYSTEM | python3 -c "import sys, json; print(json.load(sys.stdin)['ProcessorSummary']['Count'])"` # jq -r .ProcessorSummary.Count` x `echo $THISSYSTEM | jq -r .ProcessorSummary.Model`"
+      THISCPUTYPE=`echo $THISSYSTEM | python3 -c "import sys, json; print(json.load(sys.stdin)['ProcessorSummary']['Model'])"`
+      THISSERIAL=`echo $THISSYSTEM | python3 -c "import sys, json; print(json.load(sys.stdin)['SerialNumber'])"` # jq -r .SerialNumber`
+
+      THISSTORAGE=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/Storage?\$expand=.`
+      #THISSTORAGENESTED=$(for i in `echo $THISSTORAGE | jq -r '.Members[]."@odata.id"'`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done)
+      THISSTORAGENESTED=$(for i in `echo $THISSTORAGE | python3 -c "import sys, json; print(json.load(sys.stdin)['Members'][0]['@odata.id'])"`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done)
+      if [ -z "$THISSTORAGENESTED" ]; then
+        echo "  WARN - Storage Info Unavailable at PLDM defined standard RedFish URI for BMC ${BMC}, trying HPE proprietary URI"
+        THISSTORAGE=`curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}/redfish/v1/Systems/1/SmartStorage/ArrayControllers?\$expand=.`
+        THISSTORAGENESTED=$(for i in `echo $THISSTORAGE | python3 -c "import sys, json; print(json.load(sys.stdin)['Members'][0]['@odata.id'])"`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done)
+        if [ -z "$THISSTORAGENESTED" ]; then
+          echo "  ERROR - Storage Info Unavailable at HPE proprietary URI as well. Giving up for BMC ${BMC}"
+          THISDRIVECOUNT="please check manually"
+          THISRAIDCOUNT="please check manually"
+        else
+          echo "  SUCCESS - Storage Info Available at HPE proprietary URI"
+          THISDRIVECOUNT=$(for i in `echo $THISSTORAGENESTED | python3 -c "import sys, json; print(json.load(sys.stdin)['Links']['PhysicalDrives']['@odata.id'])"`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done | python3 -c "import sys, json; print(json.load(sys.stdin)['Members@odata.count'])")
+          THISRAIDCOUNT=$(for i in `echo $THISSTORAGENESTED | python3 -c "import sys, json; print(json.load(sys.stdin)['Links']['LogicalDrives']['@odata.id'])"`; do curl -s -u $BMCCRED -H "$HEADERS" -k https://${BMC}${i}?\$expand=.; done | python3 -c "import sys, json; print(json.load(sys.stdin)['Members@odata.count'])")
+        fi
+      else
+        THISDRIVECOUNT=`echo $THISSTORAGENESTED | python3 -c "import sys, json; print(json.load(sys.stdin)['Drives@odata.count'])"` # jq -r '."Drives@odata.count"')
+        THISRAIDCOUNT=`echo $THISSTORAGENESTED | python3 -c "import sys, json; print(json.load(sys.stdin)['Volumes']['Members@odata.count'])"` # jq -r '.Volumes."Members@odata.count"')
+      fi
+
+      NODESUMMARY+=("${BMC},${THISSERIAL},${THISBOOTMODE},${THISBIOSVER},${THISCPUCOUNT},${THISCPUTYPE},${THISMEMGB},${THISDRIVECOUNT},${THISRAIDCOUNT}")
+
+    done
+
+    echo ""
+    echo "NODES NOT REACHABLE: ${NOTREACHABLE[@]}"
+    echo ""
+    echo "NODES REACHABLE: ${REACHABLE[@]}"
+    echo ""
+    echo "NODE SUMMARY (REACHABLE ONLY):"
+    printf '%s\n' "${NODESUMMARY[@]}" | sed '1i BMC,SERIAL,BOOTMODE,BIOSVERSION,CPU_COUNT,CPU_TYPE,MEM(GB),DISKS,RAIDVOLUMES\n' | column -s, -t

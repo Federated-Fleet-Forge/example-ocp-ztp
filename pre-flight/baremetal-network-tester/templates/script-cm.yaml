@@ -1,0 +1,15 @@
+{{- range .Values.statefulSets }}
+{{- $namespace := .namespace }}
+{{- range .scripts }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}
+  namespace: {{ $namespace }}
+data:
+  {{ .filename }}: |
+{{ $.Files.Get (print "files/" .filename )| indent 4 }}
+---
+{{- end }}
+{{- end }}
+
