@@ -25,8 +25,8 @@ Exact file names may vary slightly by platform version; align with the kustomiza
 
 ## How this repository is used
 
-Argo CD ApplicationSets configured in [example-ocp-gitops-base](https://github.com/openshift-gitops-reference/example-ocp-gitops-base) watch **`siteconfigs/`** (and related paths as defined in the bootstrap repo) so new or updated clusters are registered and reconciled from Git.
+Argo CD ApplicationSets configured in [example-ocp-gitops-base](https://github.com/dusty-seahorse/example-ocp-gitops-base) watch **`siteconfigs/`** (and related paths as defined in the bootstrap repo) so new or updated clusters are registered and reconciled from Git.
 
 ## Related documentation
 
-- [example-ocp-gitops-base](https://github.com/openshift-gitops-reference/example-ocp-gitops-base) — Hub bootstrap, ApplicationSets, and [docs/architecture.md](https://github.com/openshift-gitops-reference/example-ocp-gitops-base/blob/main/docs/architecture.md)
+- [example-ocp-gitops-base](https://github.com/dusty-seahorse/example-ocp-gitops-base) — Hub bootstrap, ApplicationSets, and [docs/architecture.md](https://github.com/dusty-seahorse/example-ocp-gitops-base/blob/main/docs/architecture.md)
