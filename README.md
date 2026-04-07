@@ -27,6 +27,10 @@ Exact file names may vary slightly by platform version; align with the kustomiza
 
 Argo CD ApplicationSets configured in [example-ocp-gitops-base](https://github.com/dusty-seahorse/example-ocp-gitops-base) watch **`siteconfigs/`** (and related paths as defined in the bootstrap repo) so new or updated clusters are registered and reconciled from Git.
 
+## Security and Access
+
+Because Git RBAC is repository-wide, this repository is kept physically separate from the hub bootstrap (`example-ocp-gitops-base`). This split ensures that Network and Data Centre Teams can safely submit Pull Requests to manage day-to-day site changes (like updating a site's IP address, adding a new `SiteConfig`, or tweaking routes) without requiring admin access to the core GitOps engine or root App-of-Apps.
+
 ## Related documentation
 
 - [example-ocp-gitops-base](https://github.com/dusty-seahorse/example-ocp-gitops-base) — Hub bootstrap, ApplicationSets, and [docs/architecture.md](https://github.com/dusty-seahorse/example-ocp-gitops-base/blob/main/docs/architecture.md)
