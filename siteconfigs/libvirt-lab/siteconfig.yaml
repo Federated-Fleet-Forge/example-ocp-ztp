@@ -1,0 +1,140 @@
+---
+# Libvirt lab site config targeting Sushy Redfish emulation.
+#
+# Prerequisites:
+#   - Sushy emulator running (see https://github.com/ngner/sushy-lab)
+#   - VMs created with sushy-lab/vms/create-vms.sh
+#   - bmh-secret created in the namespace with Sushy credentials
+#
+# CHANGE: replace <SUSHY_HOST>, domain UUIDs, IPs, and MACs
+# to match your sushy-lab environment. The domain UUIDs are printed
+# by create-vms.sh and can be queried via:
+#   curl http://<SUSHY_HOST>:8000/redfish/v1/Systems/ | jq .
+apiVersion: ran.openshift.io/v1
+kind: SiteConfig
+metadata:
+  name: "libvirt-lab"
+  namespace: "libvirt-lab"
+spec:
+  baseDomain: "lab.example.com"
+  pullSecretRef:
+    name: "pull-secret-workload-clusters"
+  clusterImageSetNameRef: "libvirt-lab-imageset"
+  sshPublicKey: "ssh-ed25519 AAAA... user@lab"
+  clusters:
+  - clusterName: "libvirt-lab"
+    networkType: "OVNKubernetes"
+    clusterLabels:
+      vendor: OpenShift
+      common: "true"
+      cluster-group: lab
+      cloud: BareMetal
+    clusterNetwork:
+    - cidr: 10.128.0.0/14
+      hostPrefix: 23
+    serviceNetwork:
+    - 172.30.0.0/16
+    apiVIP: 192.168.192.100
+    ingressVIP: 192.168.192.101
+    nodes:
+    - hostName: "master-0.libvirt-lab.lab.example.com"
+      role: "master"
+      rootDeviceHints:
+        deviceName: /dev/vda
+      # CHANGE: replace UUID with output from create-vms.sh
+      bmcAddress: redfish-virtualmedia+http://192.168.188.50:8000/redfish/v1/Systems/<domain-uuid-1>
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "aa:aa:aa:aa:aa:01"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: "aa:aa:aa:aa:aa:01"
+          name: enp1s0
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 192.168.192.1
+          interfaces:
+          - name: enp1s0
+            type: ethernet
+            state: up
+            ipv4:
+              enabled: true
+              dhcp: true
+    - hostName: "master-1.libvirt-lab.lab.example.com"
+      role: "master"
+      rootDeviceHints:
+        deviceName: /dev/vda
+      bmcAddress: redfish-virtualmedia+http://192.168.188.50:8000/redfish/v1/Systems/<domain-uuid-2>
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "aa:aa:aa:aa:aa:02"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: "aa:aa:aa:aa:aa:02"
+          name: enp1s0
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 192.168.192.1
+          interfaces:
+          - name: enp1s0
+            type: ethernet
+            state: up
+            ipv4:
+              enabled: true
+              dhcp: true
+    - hostName: "worker-0.libvirt-lab.lab.example.com"
+      role: "worker"
+      rootDeviceHints:
+        deviceName: /dev/vda
+      bmcAddress: redfish-virtualmedia+http://192.168.188.50:8000/redfish/v1/Systems/<domain-uuid-3>
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "aa:aa:aa:aa:aa:03"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: "aa:aa:aa:aa:aa:03"
+          name: enp1s0
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 192.168.192.1
+          interfaces:
+          - name: enp1s0
+            type: ethernet
+            state: up
+            ipv4:
+              enabled: true
+              dhcp: true
+    - hostName: "worker-1.libvirt-lab.lab.example.com"
+      role: "worker"
+      rootDeviceHints:
+        deviceName: /dev/vda
+      bmcAddress: redfish-virtualmedia+http://192.168.188.50:8000/redfish/v1/Systems/<domain-uuid-4>
+      bmcCredentialsName:
+        name: "bmh-secret"
+      bootMACAddress: "aa:aa:aa:aa:aa:04"
+      bootMode: "UEFI"
+      nodeNetwork:
+        interfaces:
+        - macAddress: "aa:aa:aa:aa:aa:04"
+          name: enp1s0
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 192.168.192.1
+          interfaces:
+          - name: enp1s0
+            type: ethernet
+            state: up
+            ipv4:
+              enabled: true
+              dhcp: true
