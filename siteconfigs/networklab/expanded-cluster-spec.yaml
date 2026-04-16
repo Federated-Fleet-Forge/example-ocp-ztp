@@ -1,0 +1,113 @@
+apiVersion: hive.openshift.io/v1
+kind: ClusterImageSet
+metadata:
+  name: networklab-imageset
+spec:
+  releaseImage: quay.io/openshift-release-dev/ocp-release:4.21.0-x86_64
+---
+apiVersion: ran.openshift.io/v1
+kind: SiteConfig
+metadata:
+  name: networklab
+  namespace: networklab
+siteConfigError: 'Error: could not build the entire SiteConfig defined by /tmp/kust-plugin-config-1866408210:
+  stat /home/nday/.config/kustomize/plugin/ran.openshift.io/v1/siteconfig/extra-manifest:
+  no such file or directory'
+spec:
+  baseDomain: testing
+  clusterImageSetNameRef: networklab-imageset
+  clusters:
+  - apiVIP: 192.168.188.65
+    clusterLabels:
+      cloud: BareMetal
+      cluster-group: lab
+      common: "true"
+      vendor: OpenShift
+    clusterName: networklab
+    clusterNetwork:
+    - cidr: 10.128.0.0/14
+      hostPrefix: 23
+    ingressVIP: 192.168.188.66
+    networkType: OVNKubernetes
+    nodes:
+    - bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/1634ca02-c6e5-40cd-806f-592b993a9459
+      bmcCredentialsName:
+        name: bmh-secret
+      bootMACAddress: aa:aa:aa:aa:aa:01
+      bootMode: UEFI
+      hostName: master-0.networklab.testing
+      nodeNetwork:
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 192.168.168.1
+          interfaces:
+          - ipv4:
+              dhcp: true
+              enabled: true
+            name: enp1s0
+            state: up
+            type: ethernet
+        interfaces:
+        - macAddress: aa:aa:aa:aa:aa:01
+          name: enp1s0
+      role: master
+      rootDeviceHints:
+        deviceName: /dev/vda
+    - bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/6762b0e8-0b2a-4ef1-bfad-efaad6f26e1d
+      bmcCredentialsName:
+        name: bmh-secret
+      bootMACAddress: aa:aa:aa:aa:aa:02
+      bootMode: UEFI
+      hostName: worker-0.networklab.testing
+      nodeNetwork:
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 192.168.168.1
+          interfaces:
+          - ipv4:
+              dhcp: true
+              enabled: true
+            name: enp1s0
+            state: up
+            type: ethernet
+        interfaces:
+        - macAddress: aa:aa:aa:aa:aa:02
+          name: enp1s0
+      role: worker
+      rootDeviceHints:
+        deviceName: /dev/vda
+    - bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/36c969e8-a8e1-4158-b1fc-9edd7198fb03
+      bmcCredentialsName:
+        name: bmh-secret
+      bootMACAddress: aa:aa:aa:aa:aa:03
+      bootMode: UEFI
+      hostName: worker-1.networklab.testing
+      nodeNetwork:
+        config:
+          dns-resolver:
+            config:
+              server:
+              - 192.168.168.1
+          interfaces:
+          - ipv4:
+              dhcp: true
+              enabled: true
+            name: enp1s0
+            state: up
+            type: ethernet
+        interfaces:
+        - macAddress: aa:aa:aa:aa:aa:03
+          name: enp1s0
+      role: worker
+      rootDeviceHints:
+        deviceName: /dev/vda
+    serviceNetwork:
+    - 172.30.0.0/16
+  pullSecretRef:
+    name: pull-secret-workload-clusters
+  sshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLG10NPje1pMjpEP7KyT+jL3ywnUoUajXivRoUeHeJatTHjH54K7lvEQ1+KP5b3t72ilyjTjfrO7vmbuofQDrkaZf4xobcYKW2BljbQgHGv9L/thBhEjnAqucY+9mKJxhv0kD+h/sYn6WakLzy4Sc7AQZ7+L+1fhWl/D8efwd1ob52oKrJPXWb7xz4mB7WjrikP4SdhOKPv5wF8e8gctsBY8BxUONXb9Pbx0fJ57j+5LJTsr3CjaxtQpS6JvtJ2/Qz7epNRQTdtK8kxDscSgzCYu/u4ntiMoAVICfIzui6CHnXP1uneQcFOePwJPBu5bXypxkfTZQJE4JP8aHtUcQx
+    nick@nick-ublaptop
