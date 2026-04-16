@@ -1,7 +1,7 @@
 apiVersion: hive.openshift.io/v1
 kind: ClusterImageSet
 metadata:
-  name: libvirt-lab-imageset
+  name: networklab-imageset
 spec:
   # CHANGE: update to match your target OCP release
-  releaseImage: quay.io/openshift-release-dev/ocp-release:4.17.0-x86_64
+  releaseImage: quay.io/openshift-release-dev/ocp-release:4.21.0-x86_64
