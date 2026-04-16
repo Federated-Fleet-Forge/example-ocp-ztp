@@ -44,7 +44,7 @@ spec:
       role: "master"
       rootDeviceHints:
         deviceName: /dev/vda
-      bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/<domain-uuid-1>
+      bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/1634ca02-c6e5-40cd-806f-592b993a9459
       bmcCredentialsName:
         name: "bmh-secret"
       bootMACAddress: "aa:aa:aa:aa:aa:01"
@@ -69,7 +69,7 @@ spec:
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda
-      bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/<domain-uuid-2>
+      bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/6762b0e8-0b2a-4ef1-bfad-efaad6f26e1d
       bmcCredentialsName:
         name: "bmh-secret"
       bootMACAddress: "aa:aa:aa:aa:aa:02"
@@ -94,7 +94,7 @@ spec:
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda
-      bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/<domain-uuid-3>
+      bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/36c969e8-a8e1-4158-b1fc-9edd7198fb03
       bmcCredentialsName:
         name: "bmh-secret"
       bootMACAddress: "aa:aa:aa:aa:aa:03"
