@@ -5,8 +5,7 @@
 #   - Sushy emulator running (see https://github.com/ngner/sushy-lab)
 #   - VMs created with sushy-lab/vms/create-vms.sh (BASENAME=networklab)
 #   - bmh-secret created in the namespace with Sushy credentials
-#   - DNS records pushed to VyOS for api.networklab.testing and
-#     *.apps.networklab.testing (see sushy-lab/crc/networklab-switch-dns)
+#   - DNS records pushed to your DNS server for networklab.example.com
 #
 # CHANGE: replace <SUSHY_HOST>, domain UUIDs, and VIPs to match your
 # sushy-lab environment. The domain UUIDs are printed by create-vms.sh
@@ -22,7 +21,7 @@ spec:
   pullSecretRef:
     name: "pull-secret-workload-clusters"
   clusterImageSetNameRef: "networklab-imageset"
-  sshPublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLG10NPje1pMjpEP7KyT+jL3ywnUoUajXivRoUeHeJatTHjH54K7lvEQ1+KP5b3t72ilyjTjfrO7vmbuofQDrkaZf4xobcYKW2BljbQgHGv9L/thBhEjnAqucY+9mKJxhv0kD+h/sYn6WakLzy4Sc7AQZ7+L+1fhWl/D8efwd1ob52oKrJPXWb7xz4mB7WjrikP4SdhOKPv5wF8e8gctsBY8BxUONXb9Pbx0fJ57j+5LJTsr3CjaxtQpS6JvtJ2/Qz7epNRQTdtK8kxDscSgzCYu/u4ntiMoAVICfIzui6CHnXP1uneQcFOePwJPBu5bXypxkfTZQJE4JP8aHtUcQx nick@nick-ublaptop"
+  sshPublicKey: "ssh-rsa blashasdfjjkjasdkfjasf example@example.com"
   clusters:
   - clusterName: "networklab"
     networkType: "OVNKubernetes"
@@ -40,7 +39,7 @@ spec:
     apiVIP: 192.168.188.65
     ingressVIP: 192.168.188.66
     nodes:
-    - hostName: "master-0.networklab.testing"
+    - hostName: "master-0..networklab.internal.nickday.biz"
       role: "master"
       rootDeviceHints:
         deviceName: /dev/vda
@@ -65,7 +64,7 @@ spec:
             ipv4:
               enabled: true
               dhcp: true
-    - hostName: "worker-0.networklab.testing"
+    - hostName: "worker-0..networklab.internal.nickday.biz"
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda
@@ -90,7 +89,7 @@ spec:
             ipv4:
               enabled: true
               dhcp: true
-    - hostName: "worker-1.networklab.testing"
+    - hostName: "worker-1..networklab.internal.nickday.biz"
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda

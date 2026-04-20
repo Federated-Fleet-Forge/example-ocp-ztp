@@ -1,113 +1,270 @@
-apiVersion: hive.openshift.io/v1
-kind: ClusterImageSet
+apiVersion: v1
+kind: Namespace
 metadata:
-  name: networklab-imageset
-spec:
-  releaseImage: quay.io/openshift-release-dev/ocp-release:4.21.0-x86_64
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    name: networklab
+  name: networklab
 ---
-apiVersion: ran.openshift.io/v1
-kind: SiteConfig
+apiVersion: agent-install.openshift.io/v1beta1
+kind: InfraEnv
 metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
   name: networklab
   namespace: networklab
-siteConfigError: 'Error: could not build the entire SiteConfig defined by /tmp/kust-plugin-config-1866408210:
-  stat /home/nday/.config/kustomize/plugin/ran.openshift.io/v1/siteconfig/extra-manifest:
-  no such file or directory'
 spec:
-  baseDomain: testing
-  clusterImageSetNameRef: networklab-imageset
-  clusters:
-  - apiVIP: 192.168.188.65
-    clusterLabels:
-      cloud: BareMetal
-      cluster-group: lab
-      common: "true"
-      vendor: OpenShift
-    clusterName: networklab
+  clusterRef:
+    name: networklab
+    namespace: networklab
+  nmStateConfigLabelSelector:
+    matchLabels:
+      nmstate-label: networklab
+  pullSecretRef:
+    name: pull-secret-workload-clusters
+  sshAuthorizedKey: ssh-rsa blashasdfjjkjasdkfjasf example@example.com
+---
+apiVersion: agent-install.openshift.io/v1beta1
+kind: NMStateConfig
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    nmstate-label: networklab
+  name: master-0..networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  config:
+    dns-resolver:
+      config:
+        server:
+        - 192.168.168.1
+    interfaces:
+    - ipv4:
+        dhcp: true
+        enabled: true
+      name: enp1s0
+      state: up
+      type: ethernet
+  interfaces:
+  - macAddress: aa:aa:aa:aa:aa:01
+    name: enp1s0
+---
+apiVersion: agent-install.openshift.io/v1beta1
+kind: NMStateConfig
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    nmstate-label: networklab
+  name: worker-0..networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  config:
+    dns-resolver:
+      config:
+        server:
+        - 192.168.168.1
+    interfaces:
+    - ipv4:
+        dhcp: true
+        enabled: true
+      name: enp1s0
+      state: up
+      type: ethernet
+  interfaces:
+  - macAddress: aa:aa:aa:aa:aa:02
+    name: enp1s0
+---
+apiVersion: agent-install.openshift.io/v1beta1
+kind: NMStateConfig
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    nmstate-label: networklab
+  name: worker-1..networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  config:
+    dns-resolver:
+      config:
+        server:
+        - 192.168.168.1
+    interfaces:
+    - ipv4:
+        dhcp: true
+        enabled: true
+      name: enp1s0
+      state: up
+      type: ethernet
+  interfaces:
+  - macAddress: aa:aa:aa:aa:aa:03
+    name: enp1s0
+---
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  name: networklab
+  namespace: networklab
+spec:
+  applicationManager:
+    enabled: false
+  certPolicyController:
+    enabled: false
+  clusterName: networklab
+  clusterNamespace: networklab
+  iamPolicyController:
+    enabled: false
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: false
+---
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    cloud: BareMetal
+    cluster-group: lab
+    common: "true"
+    vendor: OpenShift
+  name: networklab
+spec:
+  hubAcceptsClient: true
+---
+apiVersion: extensions.hive.openshift.io/v1beta1
+kind: AgentClusterInstall
+metadata:
+  annotations:
+    agent-install.openshift.io/install-config-overrides: '{"networking":{"networkType":"OVNKubernetes"}}'
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  name: networklab
+  namespace: networklab
+spec:
+  apiVIP: 192.168.188.65
+  clusterDeploymentRef:
+    name: networklab
+  imageSetRef:
+    name: networklab-imageset
+  ingressVIP: 192.168.188.66
+  manifestsConfigMapRef:
+    name: networklab
+  networking:
     clusterNetwork:
     - cidr: 10.128.0.0/14
       hostPrefix: 23
-    ingressVIP: 192.168.188.66
-    networkType: OVNKubernetes
-    nodes:
-    - bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/1634ca02-c6e5-40cd-806f-592b993a9459
-      bmcCredentialsName:
-        name: bmh-secret
-      bootMACAddress: aa:aa:aa:aa:aa:01
-      bootMode: UEFI
-      hostName: master-0.networklab.testing
-      nodeNetwork:
-        config:
-          dns-resolver:
-            config:
-              server:
-              - 192.168.168.1
-          interfaces:
-          - ipv4:
-              dhcp: true
-              enabled: true
-            name: enp1s0
-            state: up
-            type: ethernet
-        interfaces:
-        - macAddress: aa:aa:aa:aa:aa:01
-          name: enp1s0
-      role: master
-      rootDeviceHints:
-        deviceName: /dev/vda
-    - bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/6762b0e8-0b2a-4ef1-bfad-efaad6f26e1d
-      bmcCredentialsName:
-        name: bmh-secret
-      bootMACAddress: aa:aa:aa:aa:aa:02
-      bootMode: UEFI
-      hostName: worker-0.networklab.testing
-      nodeNetwork:
-        config:
-          dns-resolver:
-            config:
-              server:
-              - 192.168.168.1
-          interfaces:
-          - ipv4:
-              dhcp: true
-              enabled: true
-            name: enp1s0
-            state: up
-            type: ethernet
-        interfaces:
-        - macAddress: aa:aa:aa:aa:aa:02
-          name: enp1s0
-      role: worker
-      rootDeviceHints:
-        deviceName: /dev/vda
-    - bmcAddress: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/36c969e8-a8e1-4158-b1fc-9edd7198fb03
-      bmcCredentialsName:
-        name: bmh-secret
-      bootMACAddress: aa:aa:aa:aa:aa:03
-      bootMode: UEFI
-      hostName: worker-1.networklab.testing
-      nodeNetwork:
-        config:
-          dns-resolver:
-            config:
-              server:
-              - 192.168.168.1
-          interfaces:
-          - ipv4:
-              dhcp: true
-              enabled: true
-            name: enp1s0
-            state: up
-            type: ethernet
-        interfaces:
-        - macAddress: aa:aa:aa:aa:aa:03
-          name: enp1s0
-      role: worker
-      rootDeviceHints:
-        deviceName: /dev/vda
     serviceNetwork:
     - 172.30.0.0/16
+  provisionRequirements:
+    controlPlaneAgents: 1
+  sshPublicKey: ssh-rsa blashasdfjjkjasdkfjasf example@example.com
+---
+apiVersion: hive.openshift.io/v1
+kind: ClusterDeployment
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  name: networklab
+  namespace: networklab
+spec:
+  baseDomain: testing
+  clusterInstallRef:
+    group: extensions.hive.openshift.io
+    kind: AgentClusterInstall
+    name: networklab
+    version: v1beta1
+  clusterName: networklab
+  platform:
+    agentBareMetal:
+      agentSelector:
+        matchLabels:
+          cluster-name: networklab
   pullSecretRef:
     name: pull-secret-workload-clusters
-  sshPublicKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLG10NPje1pMjpEP7KyT+jL3ywnUoUajXivRoUeHeJatTHjH54K7lvEQ1+KP5b3t72ilyjTjfrO7vmbuofQDrkaZf4xobcYKW2BljbQgHGv9L/thBhEjnAqucY+9mKJxhv0kD+h/sYn6WakLzy4Sc7AQZ7+L+1fhWl/D8efwd1ob52oKrJPXWb7xz4mB7WjrikP4SdhOKPv5wF8e8gctsBY8BxUONXb9Pbx0fJ57j+5LJTsr3CjaxtQpS6JvtJ2/Qz7epNRQTdtK8kxDscSgzCYu/u4ntiMoAVICfIzui6CHnXP1uneQcFOePwJPBu5bXypxkfTZQJE4JP8aHtUcQx
-    nick@nick-ublaptop
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    bmac.agent-install.openshift.io/hostname: master-0..networklab.internal.nickday.biz
+    bmac.agent-install.openshift.io/role: master
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    infraenvs.agent-install.openshift.io: networklab
+  name: master-0..networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  automatedCleaningMode: disabled
+  bmc:
+    address: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/1634ca02-c6e5-40cd-806f-592b993a9459
+    credentialsName: bmh-secret
+    disableCertificateVerification: true
+  bootMACAddress: aa:aa:aa:aa:aa:01
+  bootMode: UEFI
+  online: true
+  rootDeviceHints:
+    deviceName: /dev/vda
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    bmac.agent-install.openshift.io/hostname: worker-0..networklab.internal.nickday.biz
+    bmac.agent-install.openshift.io/role: worker
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    infraenvs.agent-install.openshift.io: networklab
+  name: worker-0..networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  automatedCleaningMode: disabled
+  bmc:
+    address: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/6762b0e8-0b2a-4ef1-bfad-efaad6f26e1d
+    credentialsName: bmh-secret
+    disableCertificateVerification: true
+  bootMACAddress: aa:aa:aa:aa:aa:02
+  bootMode: UEFI
+  online: true
+  rootDeviceHints:
+    deviceName: /dev/vda
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    bmac.agent-install.openshift.io/hostname: worker-1..networklab.internal.nickday.biz
+    bmac.agent-install.openshift.io/role: worker
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    infraenvs.agent-install.openshift.io: networklab
+  name: worker-1..networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  automatedCleaningMode: disabled
+  bmc:
+    address: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/36c969e8-a8e1-4158-b1fc-9edd7198fb03
+    credentialsName: bmh-secret
+    disableCertificateVerification: true
+  bootMACAddress: aa:aa:aa:aa:aa:03
+  bootMode: UEFI
+  online: true
+  rootDeviceHints:
+    deviceName: /dev/vda
