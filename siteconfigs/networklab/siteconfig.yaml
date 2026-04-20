@@ -39,7 +39,7 @@ spec:
     apiVIP: 192.168.188.65
     ingressVIP: 192.168.188.66
     nodes:
-    - hostName: "master-0..networklab.internal.nickday.biz"
+    - hostName: "master-0.networklab.testing"
       role: "master"
       rootDeviceHints:
         deviceName: /dev/vda
@@ -64,7 +64,7 @@ spec:
             ipv4:
               enabled: true
               dhcp: true
-    - hostName: "worker-0..networklab.internal.nickday.biz"
+    - hostName: "worker-0.networklab.testing"
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda
@@ -89,7 +89,7 @@ spec:
             ipv4:
               enabled: true
               dhcp: true
-    - hostName: "worker-1..networklab.internal.nickday.biz"
+    - hostName: "worker-1.networklab.testing"
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda
