@@ -17,11 +17,11 @@ metadata:
   name: "networklab"
   namespace: "networklab"
 spec:
-  baseDomain: "testing"
+  baseDomain: "internal.nickday.biz"
   pullSecretRef:
     name: "pull-secret-workload-clusters"
   clusterImageSetNameRef: "networklab-imageset"
-  sshPublicKey: "ssh-rsa blashasdfjjkjasdkfjasf example@example.com"
+  sshPublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLG10NPje1pMjpEP7KyT+jL3ywnUoUajXivRoUeHeJatTHjH54K7lvEQ1+KP5b3t72ilyjTjfrO7vmbuofQDrkaZf4xobcYKW2BljbQgHGv9L/thBhEjnAqucY+9mKJxhv0kD+h/sYn6WakLzy4Sc7AQZ7+L+1fhWl/D8efwd1ob52oKrJPXWb7xz4mB7WjrikP4SdhOKPv5wF8e8gctsBY8BxUONXb9Pbx0fJ57j+5LJTsr3CjaxtQpS6JvtJ2/Qz7epNRQTdtK8kxDscSgzCYu/u4ntiMoAVICfIzui6CHnXP1uneQcFOePwJPBu5bXypxkfTZQJE4JP8aHtUcQx nick@nick-ublaptop"
   clusters:
   - clusterName: "networklab"
     networkType: "OVNKubernetes"
@@ -35,11 +35,11 @@ spec:
       hostPrefix: 23
     serviceNetwork:
     - 172.30.0.0/16
-    # CHANGE: set these to free IPs on your br0 LAN subnet
-    apiVIP: 192.168.188.65
-    ingressVIP: 192.168.188.66
+    # VIPs not used for SNO -- workers added day-2
+    # apiVIP: 192.168.188.65
+    # ingressVIP: 192.168.188.66
     nodes:
-    - hostName: "master-0.networklab.testing"
+    - hostName: "master-0.networklab.internal.nickday.biz"
       role: "master"
       rootDeviceHints:
         deviceName: /dev/vda
@@ -57,14 +57,22 @@ spec:
             config:
               server:
               - 192.168.168.1
+          routes:
+            config:
+            - destination: 0.0.0.0/0
+              next-hop-address: 192.168.188.1
+              next-hop-interface: enp1s0
           interfaces:
           - name: enp1s0
             type: ethernet
             state: up
             ipv4:
               enabled: true
-              dhcp: true
-    - hostName: "worker-0.networklab.testing"
+              dhcp: false
+              address:
+              - ip: 192.168.188.68
+                prefix-length: 24
+    - hostName: "worker-0.networklab.internal.nickday.biz"
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda
@@ -89,7 +97,7 @@ spec:
             ipv4:
               enabled: true
               dhcp: true
-    - hostName: "worker-1.networklab.testing"
+    - hostName: "worker-1.networklab.internal.nickday.biz"
       role: "worker"
       rootDeviceHints:
         deviceName: /dev/vda
