@@ -180,3 +180,105 @@ spec:
   online: true
   rootDeviceHints:
     deviceName: /dev/vda
+---
+apiVersion: agent-install.openshift.io/v1beta1
+kind: NMStateConfig
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    nmstate-label: networklab
+  name: worker-0.networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  config:
+    dns-resolver:
+      config:
+        server:
+        - 192.168.168.1
+    interfaces:
+    - ipv4:
+        dhcp: true
+        enabled: true
+      name: enp1s0
+      state: up
+      type: ethernet
+  interfaces:
+  - macAddress: aa:aa:aa:aa:aa:02
+    name: enp1s0
+---
+apiVersion: agent-install.openshift.io/v1beta1
+kind: NMStateConfig
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    nmstate-label: networklab
+  name: worker-1.networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  config:
+    dns-resolver:
+      config:
+        server:
+        - 192.168.168.1
+    interfaces:
+    - ipv4:
+        dhcp: true
+        enabled: true
+      name: enp1s0
+      state: up
+      type: ethernet
+  interfaces:
+  - macAddress: aa:aa:aa:aa:aa:03
+    name: enp1s0
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    bmac.agent-install.openshift.io/hostname: worker-0.networklab.internal.nickday.biz
+    bmac.agent-install.openshift.io/role: worker
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    infraenvs.agent-install.openshift.io: networklab
+  name: worker-0.networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  automatedCleaningMode: disabled
+  bmc:
+    address: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/6762b0e8-0b2a-4ef1-bfad-efaad6f26e1d
+    credentialsName: bmh-secret
+    disableCertificateVerification: true
+  bootMACAddress: aa:aa:aa:aa:aa:02
+  bootMode: UEFI
+  online: true
+  rootDeviceHints:
+    deviceName: /dev/vda
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    bmac.agent-install.openshift.io/hostname: worker-1.networklab.internal.nickday.biz
+    bmac.agent-install.openshift.io/role: worker
+    ran.openshift.io/ztp-gitops-generated: '{}'
+  labels:
+    infraenvs.agent-install.openshift.io: networklab
+  name: worker-1.networklab.internal.nickday.biz
+  namespace: networklab
+spec:
+  automatedCleaningMode: disabled
+  bmc:
+    address: redfish-virtualmedia+http://192.168.188.55:8000/redfish/v1/Systems/36c969e8-a8e1-4158-b1fc-9edd7198fb03
+    credentialsName: bmh-secret
+    disableCertificateVerification: true
+  bootMACAddress: aa:aa:aa:aa:aa:03
+  bootMode: UEFI
+  online: true
+  rootDeviceHints:
+    deviceName: /dev/vda
